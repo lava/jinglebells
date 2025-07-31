@@ -62,7 +62,7 @@ impl Note {
 }
 
 /// Musical scales with interval definitions
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Scale {
     Major,
     Minor,
@@ -217,7 +217,7 @@ impl ChordProgression {
 }
 
 /// Melody generation patterns
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MelodyPattern {
     Ascending,
     Descending,

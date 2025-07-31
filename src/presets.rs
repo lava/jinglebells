@@ -8,185 +8,296 @@ use crate::{
 };
 
 impl JingleGenerator {
-    /// Create a pleasant notification sound using C major pentatonic
+    /// Create a pleasant notification sound with varied scales and patterns
     pub fn create_notification_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let base_duration = duration.unwrap_or(0.15) * self.random_variation();
-        let note_duration = base_duration / 5.0; // Divide by number of notes
+        let note_count = self.random_note_count_variation(4);
+        let note_duration = (base_duration / note_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(5));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
+        // Randomly choose between pleasant scales and patterns
+        let scale = if self.random_bool(0.7) { Scale::Pentatonic } else { Scale::Major };
+        let pattern = if self.random_bool(0.6) { MelodyPattern::Arpeggio } else { self.random_melody_pattern() };
+        let used_waveform = if self.random_bool(0.3) { self.random_waveform() } else { waveform };
+        
         let melody = Melody::from_scale(
-            Scale::Pentatonic, 
+            scale, 
             root_note, 
             5, 
-            MelodyPattern::Arpeggio, 
+            pattern, 
             note_duration
         );
         
-        self.generate_melody_samples(&melody, 5, waveform)
+        self.generate_melody_samples(&melody, 5, used_waveform)
     }
     
-    /// Create an uplifting success sound using ascending C major
+    /// Create an uplifting success sound with varied upward patterns
     pub fn create_success_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let base_duration = duration.unwrap_or(0.8) * self.random_variation();
-        let note_duration = base_duration / 4.0; // Divide by number of notes
+        let note_count = self.random_note_count_variation(5);
+        let note_duration = (base_duration / note_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
+        // Prefer uplifting scales and ascending patterns
+        let scale = if self.random_bool(0.6) { Scale::Major } else { Scale::Pentatonic };
+        let pattern = if self.random_bool(0.7) { MelodyPattern::Ascending } else { MelodyPattern::Arpeggio };
+        let used_waveform = if self.random_bool(0.4) { self.random_waveform() } else { waveform };
+        
         let melody = Melody::from_scale(
-            Scale::Major,
+            scale,
             root_note,
             4,
-            MelodyPattern::Ascending,
+            pattern,
             note_duration
         );
         
-        self.generate_melody_samples(&melody, 4, waveform)
+        self.generate_melody_samples(&melody, 4, used_waveform)
     }
     
-    /// Create an attention-grabbing alert using repeated high notes
+    /// Create an attention-grabbing alert with varied patterns and intensity
     pub fn create_alert_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let mut samples = Vec::new();
         
         // Calculate beep duration based on total duration
         let total_duration = duration.unwrap_or(0.25) * self.random_variation();
-        let beep_duration = total_duration / 2.5; // Two beeps + gap
-        let gap_duration = beep_duration / 2.0;
+        let beep_count = self.random_note_count_variation(2).max(2).min(4);
+        let beep_duration = (total_duration / (beep_count as f32 * 1.5)) * self.random_rhythm_variation();
+        let gap_duration = beep_duration * self.random_float_range(0.3..=0.8);
         
         let base_freq = base_frequency.unwrap_or(Note::G.frequency(6));
         let pitch_offset = self.random_pitch_offset();
         let frequency = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         
-        // Two short beeps
-        for _ in 0..2 {
-            let beep_samples = self.generate_tone(frequency, beep_duration, waveform);
+        // Use harsher waveforms for alerts with some variation
+        let used_waveform = if self.random_bool(0.3) { 
+            match self.random_range(0..2) {
+                0 => WaveForm::Square,
+                _ => WaveForm::Sawtooth,
+            }
+        } else { 
+            waveform 
+        };
+        
+        // Variable number of beeps with slight frequency variations
+        for i in 0..beep_count {
+            let freq_variation = if i > 0 { self.random_float_range(0.95..=1.05) } else { 1.0 };
+            let varied_freq = frequency * freq_variation;
+            let beep_samples = self.generate_tone(varied_freq, beep_duration, used_waveform);
             samples.extend(beep_samples);
             
-            // Small gap between beeps
-            let silence_samples = (SAMPLE_RATE as f32 * gap_duration) as usize;
-            samples.extend(vec![0.0; silence_samples]);
+            // Add gap between beeps (except after the last one)
+            if i < beep_count - 1 {
+                let silence_samples = (SAMPLE_RATE as f32 * gap_duration) as usize;
+                samples.extend(vec![0.0; silence_samples]);
+            }
         }
         
         samples
     }
     
-    /// Create an error/warning sound with descending minor pattern
+    /// Create an error/warning sound with varied minor patterns and dissonance
     pub fn create_error_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let base_duration = duration.unwrap_or(1.25) * self.random_variation();
-        let note_duration = base_duration / 5.0; // Divide by number of notes
+        let note_count = self.random_note_count_variation(5);
+        let note_duration = (base_duration / note_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::D.frequency(5));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
+        // Prefer more dissonant/unsettling combinations
+        let scale = if self.random_bool(0.7) { Scale::Minor } else { Scale::Chromatic };
+        let pattern = if self.random_bool(0.5) { MelodyPattern::Descending } else { MelodyPattern::Random };
+        let used_waveform = if self.random_bool(0.4) { 
+            // Prefer harsher waveforms for errors
+            match self.random_range(0..3) {
+                0 => WaveForm::Sawtooth,
+                1 => WaveForm::Square,
+                _ => waveform,
+            }
+        } else { 
+            waveform 
+        };
+        
         let melody = Melody::from_scale(
-            Scale::Minor,
+            scale,
             root_note,
             5,
-            MelodyPattern::Descending,
+            pattern,
             note_duration
         );
         
-        self.generate_melody_samples(&melody, 5, waveform)
+        self.generate_melody_samples(&melody, 5, used_waveform)
     }
     
-    /// Create a startup chime with chord progression
+    /// Create a startup chime with varied chord progressions and patterns
     pub fn create_startup_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let base_duration = duration.unwrap_or(0.6) * self.random_variation();
-        let chord_duration = base_duration / 2.0; // Two chords
+        let chord_count = self.random_note_count_variation(2).max(2).min(4);
+        let chord_duration = (base_duration / chord_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
-        let chord_progression = ChordProgression::Pop.get_chords(root_note);
+        // Vary chord progressions for different startup sounds
+        let progression = match self.random_range(0..3) {
+            0 => ChordProgression::Pop,
+            1 => ChordProgression::Classical,
+            _ => ChordProgression::Jazz,
+        };
+        let chord_progression = progression.get_chords(root_note);
         let mut chord_samples = Vec::new();
         
-        // Play only the first two chords (I-V) for a nice startup sound
-        for chord in chord_progression.iter().take(2) {
-            let chord_melody = Melody::from_chord(chord.clone(), 4, MelodyPattern::Arpeggio, chord_duration);
-            let samples = self.generate_melody_samples(&chord_melody, 4, waveform);
+        let pattern = if self.random_bool(0.7) { MelodyPattern::Arpeggio } else { MelodyPattern::Ascending };
+        let used_waveform = if self.random_bool(0.3) { self.random_waveform() } else { waveform };
+        
+        // Play a variable number of chords
+        for chord in chord_progression.iter().take(chord_count) {
+            let chord_melody = Melody::from_chord(chord.clone(), 4, pattern, chord_duration);
+            let samples = self.generate_melody_samples(&chord_melody, 4, used_waveform);
             chord_samples.extend(samples);
         }
         
         chord_samples
     }
     
-    /// Create a shutdown sound with gentle descending pattern
+    /// Create a shutdown sound with varied gentle descending patterns
     pub fn create_shutdown_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let base_duration = duration.unwrap_or(1.6) * self.random_variation();
-        let note_duration = base_duration / 4.0; // Divide by number of notes
+        let note_count = self.random_note_count_variation(4);
+        let note_duration = (base_duration / note_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::G.frequency(4));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
+        // Prefer gentle, calming scales and patterns
+        let scale = if self.random_bool(0.6) { Scale::Pentatonic } else { Scale::Major };
+        let pattern = if self.random_bool(0.8) { MelodyPattern::Descending } else { MelodyPattern::ScaleRun };
+        let used_waveform = if self.random_bool(0.2) { 
+            // Prefer softer waveforms for shutdown
+            match self.random_range(0..2) {
+                0 => WaveForm::Sine,
+                _ => WaveForm::Triangle,
+            }
+        } else { 
+            waveform 
+        };
+        
         let melody = Melody::from_scale(
-            Scale::Pentatonic,
+            scale,
             root_note,
             4,
-            MelodyPattern::Descending,
+            pattern,
             note_duration
         );
         
-        self.generate_melody_samples(&melody, 4, waveform)
+        self.generate_melody_samples(&melody, 4, used_waveform)
     }
     
-    /// Create a message received sound - short and pleasant
+    /// Create a message received sound with varied short pleasant patterns
     pub fn create_message_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        // Two ascending notes
         let mut samples = Vec::new();
         
         let total_duration = duration.unwrap_or(0.25) * self.random_variation();
-        let note1_duration = total_duration * 0.4;
-        let note2_duration = total_duration * 0.6;
+        let note_count = self.random_note_count_variation(2).max(2).min(3);
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(5));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_base_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
-        let note2_freq = adjusted_base_freq * Note::E.frequency(5) / Note::C.frequency(5); // Major third above
+        let root_note = Note::from_frequency(adjusted_base_freq);
         
-        let note1_samples = self.generate_tone(adjusted_base_freq, note1_duration, waveform);
-        let note2_samples = self.generate_tone(note2_freq, note2_duration, waveform);
+        let used_waveform = if self.random_bool(0.3) { self.random_waveform() } else { waveform };
         
-        samples.extend(note1_samples);
-        samples.extend(note2_samples);
+        if note_count == 2 {
+            // Traditional two-note pattern with variations
+            let rhythm_var = self.random_rhythm_variation();
+            let note1_duration = (total_duration * 0.4) * rhythm_var;
+            let note2_duration = (total_duration * 0.6) * rhythm_var;
+            
+            // Vary the interval between notes
+            let interval_semitones = match self.random_range(0..4) {
+                0 => 4, // Major third
+                1 => 5, // Perfect fourth
+                2 => 7, // Perfect fifth
+                _ => 3, // Minor third
+            };
+            let note2_freq = adjusted_base_freq * (2.0_f32).powf(interval_semitones as f32 / 12.0);
+            
+            let note1_samples = self.generate_tone(adjusted_base_freq, note1_duration, used_waveform);
+            let note2_samples = self.generate_tone(note2_freq, note2_duration, used_waveform);
+            
+            samples.extend(note1_samples);
+            samples.extend(note2_samples);
+        } else {
+            // Three-note arpeggio pattern
+            let note_duration = total_duration / 3.0;
+            let chord = Chord::major(root_note);
+            let melody = Melody::from_chord(chord, 5, MelodyPattern::Arpeggio, note_duration);
+            samples = self.generate_melody_samples(&melody, 5, used_waveform);
+        }
+        
         samples
     }
     
-    /// Create a completion/done sound with satisfying resolution
+    /// Create a completion/done sound with varied satisfying resolutions
     pub fn create_completion_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        // Perfect cadence: G -> C (V -> I)
         let mut samples = Vec::new();
         
         let base_duration = duration.unwrap_or(0.5) * self.random_variation();
-        let chord_duration = base_duration / 2.0; // Two chords
+        let chord_count = self.random_note_count_variation(2).max(2).min(3);
+        let chord_duration = (base_duration / chord_count as f32) * self.random_rhythm_variation();
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
         let pitch_offset = self.random_pitch_offset();
         let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         let root_note = Note::from_frequency(adjusted_freq);
         
-        // Calculate G (fifth) based on root note
-        let fifth_note = Note::from_frequency(root_note.frequency(4) * 1.5); // Perfect fifth ratio
+        let used_waveform = if self.random_bool(0.3) { self.random_waveform() } else { waveform };
         
-        let g_chord = Chord::major(fifth_note);
-        let c_chord = Chord::major(root_note);
-        
-        let g_melody = Melody::from_chord(g_chord, 4, MelodyPattern::Arpeggio, chord_duration * 0.8);
-        let c_melody = Melody::from_chord(c_chord, 4, MelodyPattern::Arpeggio, chord_duration * 1.2);
-        
-        samples.extend(self.generate_melody_samples(&g_melody, 4, waveform));
-        samples.extend(self.generate_melody_samples(&c_melody, 4, waveform));
+        if chord_count == 2 {
+            // Traditional V-I cadence with variations
+            let fifth_note = Note::from_frequency(root_note.frequency(4) * 1.5); // Perfect fifth ratio
+            
+            let first_chord = if self.random_bool(0.7) { 
+                Chord::major(fifth_note) 
+            } else { 
+                Chord::dominant7(fifth_note) 
+            };
+            let final_chord = Chord::major(root_note);
+            
+            let pattern = if self.random_bool(0.8) { MelodyPattern::Arpeggio } else { MelodyPattern::Ascending };
+            
+            let first_melody = Melody::from_chord(first_chord, 4, pattern, chord_duration * 0.8);
+            let final_melody = Melody::from_chord(final_chord, 4, pattern, chord_duration * 1.2);
+            
+            samples.extend(self.generate_melody_samples(&first_melody, 4, used_waveform));
+            samples.extend(self.generate_melody_samples(&final_melody, 4, used_waveform));
+        } else {
+            // Three-chord resolution (vi-V-I or ii-V-I)
+            let progression = if self.random_bool(0.5) { ChordProgression::Jazz } else { ChordProgression::Classical };
+            let chords = progression.get_chords(root_note);
+            
+            let pattern = if self.random_bool(0.7) { MelodyPattern::Arpeggio } else { MelodyPattern::Ascending };
+            
+            for chord in chords.iter().take(3) {
+                let melody = Melody::from_chord(chord.clone(), 4, pattern, chord_duration);
+                let chord_samples = self.generate_melody_samples(&melody, 4, used_waveform);
+                samples.extend(chord_samples);
+            }
+        }
         
         samples
     }

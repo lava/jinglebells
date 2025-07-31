@@ -87,14 +87,74 @@ impl JingleGenerator {
         combined
     }
     
-    /// Get a random variation factor for parameters (0.8 to 1.2 range)
+    /// Get a random variation factor for parameters (0.6 to 1.4 range for more dramatic variation)
     pub fn random_variation(&mut self) -> f32 {
-        self.rng.gen_range(0.8..=1.2)
+        self.rng.gen_range(0.6..=1.4)
     }
     
-    /// Get a random pitch offset in semitones (-2 to +2)
+    /// Get a random pitch offset in semitones (-4 to +4 for wider pitch range)
     pub fn random_pitch_offset(&mut self) -> f32 {
-        self.rng.gen_range(-2.0..=2.0)
+        self.rng.gen_range(-4.0..=4.0)
+    }
+    
+    /// Get a random rhythm variation factor (0.5 to 2.0 range)
+    pub fn random_rhythm_variation(&mut self) -> f32 {
+        self.rng.gen_range(0.5..=2.0)
+    }
+    
+    /// Get a random note count variation for melodies (±1-2 notes)
+    pub fn random_note_count_variation(&mut self, base_count: usize) -> usize {
+        let variation = self.rng.gen_range(-2..=2);
+        ((base_count as i32 + variation).max(2).min(10)) as usize
+    }
+    
+    /// Choose a random scale from available options
+    pub fn random_scale(&mut self) -> crate::music::Scale {
+        let scales = [
+            crate::music::Scale::Major,
+            crate::music::Scale::Minor,
+            crate::music::Scale::Pentatonic,
+            crate::music::Scale::Chromatic,
+        ];
+        scales[self.rng.gen_range(0..scales.len())]
+    }
+    
+    /// Choose a random melody pattern
+    pub fn random_melody_pattern(&mut self) -> crate::music::MelodyPattern {
+        let patterns = [
+            crate::music::MelodyPattern::Ascending,
+            crate::music::MelodyPattern::Descending,
+            crate::music::MelodyPattern::Arpeggio,
+            crate::music::MelodyPattern::ScaleRun,
+            crate::music::MelodyPattern::Random,
+        ];
+        patterns[self.rng.gen_range(0..patterns.len())]
+    }
+    
+    /// Generate a random boolean with given probability
+    pub fn random_bool(&mut self, probability: f64) -> bool {
+        self.rng.gen_bool(probability)
+    }
+    
+    /// Generate a random integer in a range
+    pub fn random_range(&mut self, range: std::ops::Range<i32>) -> i32 {
+        self.rng.gen_range(range)
+    }
+    
+    /// Generate a random float in a range
+    pub fn random_float_range(&mut self, range: std::ops::RangeInclusive<f32>) -> f32 {
+        self.rng.gen_range(range)
+    }
+    
+    /// Choose a random waveform for variety
+    pub fn random_waveform(&mut self) -> WaveForm {
+        let waveforms = [
+            WaveForm::Sine,
+            WaveForm::Triangle,
+            WaveForm::Sawtooth,
+            WaveForm::Square,
+        ];
+        waveforms[self.rng.gen_range(0..waveforms.len())]
     }
 }
 
