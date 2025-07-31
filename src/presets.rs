@@ -9,9 +9,14 @@ use crate::{
 
 impl JingleGenerator {
     /// Create a pleasant notification sound using C major pentatonic
-    pub fn create_notification_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        let note_duration = duration.unwrap_or(0.15) / 5.0; // Divide by number of notes
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::C.frequency(5)));
+    pub fn create_notification_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+        let base_duration = duration.unwrap_or(0.15) * self.random_variation();
+        let note_duration = base_duration / 5.0; // Divide by number of notes
+        
+        let base_freq = base_frequency.unwrap_or(Note::C.frequency(5));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         let melody = Melody::from_scale(
             Scale::Pentatonic, 
@@ -25,9 +30,14 @@ impl JingleGenerator {
     }
     
     /// Create an uplifting success sound using ascending C major
-    pub fn create_success_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        let note_duration = duration.unwrap_or(0.8) / 4.0; // Divide by number of notes
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::C.frequency(4)));
+    pub fn create_success_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+        let base_duration = duration.unwrap_or(0.8) * self.random_variation();
+        let note_duration = base_duration / 4.0; // Divide by number of notes
+        
+        let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         let melody = Melody::from_scale(
             Scale::Major,
@@ -41,15 +51,17 @@ impl JingleGenerator {
     }
     
     /// Create an attention-grabbing alert using repeated high notes
-    pub fn create_alert_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+    pub fn create_alert_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         let mut samples = Vec::new();
         
         // Calculate beep duration based on total duration
-        let total_duration = duration.unwrap_or(0.25);
+        let total_duration = duration.unwrap_or(0.25) * self.random_variation();
         let beep_duration = total_duration / 2.5; // Two beeps + gap
         let gap_duration = beep_duration / 2.0;
         
-        let frequency = base_frequency.unwrap_or(Note::G.frequency(6));
+        let base_freq = base_frequency.unwrap_or(Note::G.frequency(6));
+        let pitch_offset = self.random_pitch_offset();
+        let frequency = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
         
         // Two short beeps
         for _ in 0..2 {
@@ -65,9 +77,14 @@ impl JingleGenerator {
     }
     
     /// Create an error/warning sound with descending minor pattern
-    pub fn create_error_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        let note_duration = duration.unwrap_or(1.25) / 5.0; // Divide by number of notes
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::D.frequency(5)));
+    pub fn create_error_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+        let base_duration = duration.unwrap_or(1.25) * self.random_variation();
+        let note_duration = base_duration / 5.0; // Divide by number of notes
+        
+        let base_freq = base_frequency.unwrap_or(Note::D.frequency(5));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         let melody = Melody::from_scale(
             Scale::Minor,
@@ -81,9 +98,14 @@ impl JingleGenerator {
     }
     
     /// Create a startup chime with chord progression
-    pub fn create_startup_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        let chord_duration = duration.unwrap_or(0.6) / 2.0; // Two chords
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::C.frequency(4)));
+    pub fn create_startup_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+        let base_duration = duration.unwrap_or(0.6) * self.random_variation();
+        let chord_duration = base_duration / 2.0; // Two chords
+        
+        let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         let chord_progression = ChordProgression::Pop.get_chords(root_note);
         let mut chord_samples = Vec::new();
@@ -99,9 +121,14 @@ impl JingleGenerator {
     }
     
     /// Create a shutdown sound with gentle descending pattern
-    pub fn create_shutdown_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
-        let note_duration = duration.unwrap_or(1.6) / 4.0; // Divide by number of notes
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::G.frequency(4)));
+    pub fn create_shutdown_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+        let base_duration = duration.unwrap_or(1.6) * self.random_variation();
+        let note_duration = base_duration / 4.0; // Divide by number of notes
+        
+        let base_freq = base_frequency.unwrap_or(Note::G.frequency(4));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         let melody = Melody::from_scale(
             Scale::Pentatonic,
@@ -115,18 +142,20 @@ impl JingleGenerator {
     }
     
     /// Create a message received sound - short and pleasant
-    pub fn create_message_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+    pub fn create_message_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         // Two ascending notes
         let mut samples = Vec::new();
         
-        let total_duration = duration.unwrap_or(0.25);
+        let total_duration = duration.unwrap_or(0.25) * self.random_variation();
         let note1_duration = total_duration * 0.4;
         let note2_duration = total_duration * 0.6;
         
         let base_freq = base_frequency.unwrap_or(Note::C.frequency(5));
-        let note2_freq = base_freq * Note::E.frequency(5) / Note::C.frequency(5); // Major third above
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_base_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let note2_freq = adjusted_base_freq * Note::E.frequency(5) / Note::C.frequency(5); // Major third above
         
-        let note1_samples = self.generate_tone(base_freq, note1_duration, waveform);
+        let note1_samples = self.generate_tone(adjusted_base_freq, note1_duration, waveform);
         let note2_samples = self.generate_tone(note2_freq, note2_duration, waveform);
         
         samples.extend(note1_samples);
@@ -135,12 +164,17 @@ impl JingleGenerator {
     }
     
     /// Create a completion/done sound with satisfying resolution
-    pub fn create_completion_jingle(&self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
+    pub fn create_completion_jingle(&mut self, waveform: WaveForm, duration: Option<f32>, base_frequency: Option<f32>) -> Vec<f32> {
         // Perfect cadence: G -> C (V -> I)
         let mut samples = Vec::new();
         
-        let chord_duration = duration.unwrap_or(0.5) / 2.0; // Two chords
-        let root_note = Note::from_frequency(base_frequency.unwrap_or(Note::C.frequency(4)));
+        let base_duration = duration.unwrap_or(0.5) * self.random_variation();
+        let chord_duration = base_duration / 2.0; // Two chords
+        
+        let base_freq = base_frequency.unwrap_or(Note::C.frequency(4));
+        let pitch_offset = self.random_pitch_offset();
+        let adjusted_freq = base_freq * (2.0_f32).powf(pitch_offset / 12.0);
+        let root_note = Note::from_frequency(adjusted_freq);
         
         // Calculate G (fifth) based on root note
         let fifth_note = Note::from_frequency(root_note.frequency(4) * 1.5); // Perfect fifth ratio
@@ -173,14 +207,14 @@ pub enum JinglePreset {
 
 impl JinglePreset {
     /// Generate samples for this preset using the specified waveform
-    pub fn generate(&self, generator: &JingleGenerator, waveform: WaveForm) -> Vec<f32> {
+    pub fn generate(&self, generator: &mut JingleGenerator, waveform: WaveForm) -> Vec<f32> {
         self.generate_with_params(generator, waveform, None, None)
     }
     
     /// Generate samples for this preset with optional duration and frequency parameters
     pub fn generate_with_params(
         &self, 
-        generator: &JingleGenerator, 
+        generator: &mut JingleGenerator, 
         waveform: WaveForm,
         duration: Option<f32>,
         frequency: Option<f32>
@@ -232,17 +266,17 @@ mod tests {
 
     #[test]
     fn test_notification_jingle() {
-        let generator = JingleGenerator::new();
-        let samples = generator.create_notification_jingle(WaveForm::Sine);
+        let mut generator = JingleGenerator::new();
+        let samples = generator.create_notification_jingle(WaveForm::Sine, None, None);
         assert!(!samples.is_empty());
     }
 
     #[test]
     fn test_all_presets() {
-        let generator = JingleGenerator::new();
+        let mut generator = JingleGenerator::new();
         
         for preset in JinglePreset::all() {
-            let samples = preset.generate(&generator, WaveForm::Sine);
+            let samples = preset.generate(&mut generator, WaveForm::Sine);
             assert!(!samples.is_empty(), "Preset {} should generate samples", preset.name());
         }
     }

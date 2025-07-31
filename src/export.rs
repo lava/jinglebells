@@ -2,18 +2,30 @@
 
 use std::path::Path;
 use hound::{WavSpec, WavWriter, SampleFormat};
+use rand::{Rng, SeedableRng};
+use rand::rngs::StdRng;
 use crate::{SAMPLE_RATE, audio::{Oscillator, WaveForm}, music::Melody, error::Result};
 
 /// Main generator for creating and exporting jingle audio
 pub struct JingleGenerator {
     sample_rate: u32,
+    rng: StdRng,
 }
 
 impl JingleGenerator {
-    /// Create a new jingle generator with default settings
+    /// Create a new jingle generator with random seed
     pub fn new() -> Self {
         Self {
             sample_rate: SAMPLE_RATE,
+            rng: StdRng::from_entropy(),
+        }
+    }
+    
+    /// Create a new jingle generator with a specific seed
+    pub fn with_seed(seed: u64) -> Self {
+        Self {
+            sample_rate: SAMPLE_RATE,
+            rng: StdRng::seed_from_u64(seed),
         }
     }
     
@@ -73,6 +85,16 @@ impl JingleGenerator {
         }
         
         combined
+    }
+    
+    /// Get a random variation factor for parameters (0.8 to 1.2 range)
+    pub fn random_variation(&mut self) -> f32 {
+        self.rng.gen_range(0.8..=1.2)
+    }
+    
+    /// Get a random pitch offset in semitones (-2 to +2)
+    pub fn random_pitch_offset(&mut self) -> f32 {
+        self.rng.gen_range(-2.0..=2.0)
     }
 }
 

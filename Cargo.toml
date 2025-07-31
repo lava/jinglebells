@@ -8,3 +8,4 @@ clap = { version = "4.5.42", features = ["derive"] }
 cpal = "0.16.0"
 rodio = "0.21.1"
 hound = "3.5"
+rand = "0.8"

@@ -16,8 +16,8 @@
 //! ```rust
 //! use jinglemaker::{JingleGenerator, WaveForm};
 //! 
-//! let generator = JingleGenerator::new();
-//! let samples = generator.create_notification_jingle(WaveForm::Sine);
+//! let mut generator = JingleGenerator::new();
+//! let samples = generator.create_notification_jingle(WaveForm::Sine, None, None);
 //! generator.export_to_wav(&samples, "notification.wav").unwrap();
 //! ```
 

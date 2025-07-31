@@ -243,7 +243,7 @@ impl From<WaveFormArg> for WaveForm {
 }
 
 impl Preset {
-    fn generate_samples(&self, generator: &JingleGenerator) -> Vec<f32> {
+    fn generate_samples(&self, generator: &mut JingleGenerator) -> Vec<f32> {
         let (_, _, _, duration, frequency) = self.get_params();
         
         // Convert values to None if they are the defaults (meaning user didn't specify them)
@@ -327,20 +327,19 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         std::process::exit(1);
     }
     
-    
-    // Note: seed parameter is accepted but not currently used since presets are deterministic
-    if seed.is_some() {
-        println!("Note: Seed parameter is not currently implemented (presets are deterministic)");
-    }
-    
-    let generator = JingleGenerator::new();
+    let mut generator = if let Some(seed_value) = seed {
+        println!("Using fixed seed: {}", seed_value);
+        JingleGenerator::with_seed(seed_value)
+    } else {
+        JingleGenerator::new()
+    };
     
     println!("Generating {} jingle(s)...", count);
     println!("Preset: {} ({})", cli.preset.name(), cli.preset.description());
     println!("Waveform: {:?}", waveform);
     
     for i in 0..count {
-        let samples = cli.preset.generate_samples(&generator);
+        let samples = cli.preset.generate_samples(&mut generator);
         
         let output_path = if count == 1 {
             output.clone()
