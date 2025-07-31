@@ -1,0 +1,9 @@
+[package]
+name = "jinglemaker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = "4.5.42"
+cpal = "0.16.0"
+rodio = "0.21.1"
