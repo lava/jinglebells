@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use jinglemaker::{JingleGenerator, WaveForm};
 use std::path::PathBuf;
 
@@ -7,53 +7,220 @@ use std::path::PathBuf;
 #[command(about = "A CLI jingle generator using Rust and Rodio")]
 #[command(version = "0.1.0")]
 struct Cli {
-    /// The type of jingle to generate
-    #[arg(value_enum)]
+    #[command(subcommand)]
     preset: Preset,
-    
-    /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
-    #[arg(short, long, default_value = "1.0")]
-    duration: f32,
-    
-    /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
-    #[arg(short, long, default_value = "440.0")]
-    frequency: f32,
-    
-    /// Waveform type
-    #[arg(short, long, value_enum, default_value = "sine")]
-    waveform: WaveFormArg,
-    
-    /// Output file path
-    #[arg(short, long, default_value = "jingle.wav")]
-    output: PathBuf,
-    
-    /// Number of variations to generate
-    #[arg(short, long, default_value = "1")]
-    count: u32,
-    
-    /// Seed for reproducible generation
-    #[arg(short, long)]
-    seed: Option<u64>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+#[derive(Subcommand, Debug)]
 enum Preset {
-    /// Gentle notification sound
-    Notification,
-    /// Attention-grabbing alert
-    Alert,
-    /// Pleasant success chime
-    Success,
-    /// Warning error sound
-    Error,
-    /// System startup jingle
-    Startup,
-    /// System shutdown sound
-    Shutdown,
-    /// Message received notification
-    Message,
-    /// Task completion sound
-    Completion,
+    /// Generate a gentle notification sound
+    Notification {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sine")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "notification.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate an attention-grabbing alert
+    Alert {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "square")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "alert.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a pleasant success chime
+    Success {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "triangle")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "success.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a warning error sound
+    Error {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sawtooth")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "error.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a system startup jingle
+    Startup {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sine")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "startup.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a system shutdown sound
+    Shutdown {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sine")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "shutdown.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a message received notification
+    Message {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sine")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "message.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
+    /// Generate a task completion sound
+    Completion {
+        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        #[arg(short, long, default_value = "1.0")]
+        duration: f32,
+        
+        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        #[arg(short, long, default_value = "440.0")]
+        frequency: f32,
+        
+        /// Waveform type
+        #[arg(short, long, value_enum, default_value = "sine")]
+        waveform: WaveFormArg,
+        
+        /// Output file path
+        #[arg(short, long, default_value = "completion.wav")]
+        output: PathBuf,
+        
+        /// Number of variations to generate
+        #[arg(short, long, default_value = "1")]
+        count: u32,
+        
+        /// Seed for reproducible generation
+        #[arg(short, long)]
+        seed: Option<u64>,
+    },
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
@@ -76,29 +243,68 @@ impl From<WaveFormArg> for WaveForm {
 }
 
 impl Preset {
-    fn generate_samples(&self, generator: &JingleGenerator, waveform: WaveForm) -> Vec<f32> {
+    fn generate_samples(&self, generator: &JingleGenerator) -> Vec<f32> {
         match self {
-            Preset::Notification => generator.create_notification_jingle(waveform),
-            Preset::Alert => generator.create_alert_jingle(waveform),
-            Preset::Success => generator.create_success_jingle(waveform),
-            Preset::Error => generator.create_error_jingle(waveform),
-            Preset::Startup => generator.create_startup_jingle(waveform),
-            Preset::Shutdown => generator.create_shutdown_jingle(waveform),
-            Preset::Message => generator.create_message_jingle(waveform),
-            Preset::Completion => generator.create_completion_jingle(waveform),
+            Preset::Notification { waveform, .. } => generator.create_notification_jingle(WaveForm::from(*waveform)),
+            Preset::Alert { waveform, .. } => generator.create_alert_jingle(WaveForm::from(*waveform)),
+            Preset::Success { waveform, .. } => generator.create_success_jingle(WaveForm::from(*waveform)),
+            Preset::Error { waveform, .. } => generator.create_error_jingle(WaveForm::from(*waveform)),
+            Preset::Startup { waveform, .. } => generator.create_startup_jingle(WaveForm::from(*waveform)),
+            Preset::Shutdown { waveform, .. } => generator.create_shutdown_jingle(WaveForm::from(*waveform)),
+            Preset::Message { waveform, .. } => generator.create_message_jingle(WaveForm::from(*waveform)),
+            Preset::Completion { waveform, .. } => generator.create_completion_jingle(WaveForm::from(*waveform)),
+        }
+    }
+    
+    fn get_params(&self) -> (PathBuf, u32, Option<u64>, f32, f32) {
+        match self {
+            Preset::Notification { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Alert { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Success { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Error { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Startup { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Shutdown { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Message { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Completion { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+        }
+    }
+    
+    fn get_waveform(&self) -> WaveFormArg {
+        match self {
+            Preset::Notification { waveform, .. } => *waveform,
+            Preset::Alert { waveform, .. } => *waveform,
+            Preset::Success { waveform, .. } => *waveform,
+            Preset::Error { waveform, .. } => *waveform,
+            Preset::Startup { waveform, .. } => *waveform,
+            Preset::Shutdown { waveform, .. } => *waveform,
+            Preset::Message { waveform, .. } => *waveform,
+            Preset::Completion { waveform, .. } => *waveform,
+        }
+    }
+    
+    fn name(&self) -> &'static str {
+        match self {
+            Preset::Notification { .. } => "notification",
+            Preset::Alert { .. } => "alert",
+            Preset::Success { .. } => "success",
+            Preset::Error { .. } => "error",
+            Preset::Startup { .. } => "startup",
+            Preset::Shutdown { .. } => "shutdown",
+            Preset::Message { .. } => "message",
+            Preset::Completion { .. } => "completion",
         }
     }
     
     fn description(&self) -> &'static str {
         match self {
-            Preset::Notification => "Gentle notification sound",
-            Preset::Alert => "Attention-grabbing alert",
-            Preset::Success => "Pleasant success chime",
-            Preset::Error => "Warning error sound",
-            Preset::Startup => "System startup jingle",
-            Preset::Shutdown => "System shutdown sound",
-            Preset::Message => "Message received notification",
-            Preset::Completion => "Task completion sound",
+            Preset::Notification { .. } => "Gentle notification sound",
+            Preset::Alert { .. } => "Attention-grabbing alert",
+            Preset::Success { .. } => "Pleasant success chime",
+            Preset::Error { .. } => "Warning error sound",
+            Preset::Startup { .. } => "System startup jingle",
+            Preset::Shutdown { .. } => "System shutdown sound",
+            Preset::Message { .. } => "Message received notification",
+            Preset::Completion { .. } => "Task completion sound",
         }
     }
 }
@@ -106,38 +312,40 @@ impl Preset {
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
+    let (output, count, seed, duration, frequency) = cli.preset.get_params();
+    let waveform = cli.preset.get_waveform();
+    
     // Validate parameters
-    if cli.count == 0 || cli.count > 100 {
+    if count == 0 || count > 100 {
         eprintln!("Error: Count must be between 1 and 100");
         std::process::exit(1);
     }
     
     // Note: duration and frequency parameters are currently not implemented
-    if cli.duration != 1.0 || cli.frequency != 440.0 {
+    if duration != 1.0 || frequency != 440.0 {
         println!("Note: Duration and frequency parameters are not currently implemented (presets use fixed values)");
     }
     
-    let generator = JingleGenerator::new();
-    let waveform = WaveForm::from(cli.waveform);
-    
     // Note: seed parameter is accepted but not currently used since presets are deterministic
-    if cli.seed.is_some() {
+    if seed.is_some() {
         println!("Note: Seed parameter is not currently implemented (presets are deterministic)");
     }
     
-    println!("Generating {} jingle(s)...", cli.count);
-    println!("Preset: {} ({})", format!("{:?}", cli.preset).to_lowercase(), cli.preset.description());
-    println!("Waveform: {:?}", cli.waveform);
+    let generator = JingleGenerator::new();
     
-    for i in 0..cli.count {
-        let samples = cli.preset.generate_samples(&generator, waveform);
+    println!("Generating {} jingle(s)...", count);
+    println!("Preset: {} ({})", cli.preset.name(), cli.preset.description());
+    println!("Waveform: {:?}", waveform);
+    
+    for i in 0..count {
+        let samples = cli.preset.generate_samples(&generator);
         
-        let output_path = if cli.count == 1 {
-            cli.output.clone()
+        let output_path = if count == 1 {
+            output.clone()
         } else {
-            let stem = cli.output.file_stem().unwrap_or_default().to_string_lossy();
-            let extension = cli.output.extension().unwrap_or_default().to_string_lossy();
-            let parent = cli.output.parent().unwrap_or_else(|| std::path::Path::new("."));
+            let stem = output.file_stem().unwrap_or_default().to_string_lossy();
+            let extension = output.extension().unwrap_or_default().to_string_lossy();
+            let parent = output.parent().unwrap_or_else(|| std::path::Path::new("."));
             parent.join(format!("{}_{}.{}", stem, i + 1, extension))
         };
         
