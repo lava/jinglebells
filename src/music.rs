@@ -32,6 +32,33 @@ impl Note {
         let semitone_offset = self.semitone_offset() + (octave - 4) * 12;
         A4_FREQUENCY * 2.0_f32.powf(semitone_offset as f32 / 12.0)
     }
+    
+    /// Find the closest note to a given frequency
+    pub fn from_frequency(frequency: f32) -> Note {
+        // Calculate semitones from A4
+        let semitones_from_a4 = 12.0 * (frequency / A4_FREQUENCY).log2();
+        let rounded_semitones = semitones_from_a4.round() as i32;
+        
+        // Normalize to range 0-11 (within an octave)
+        let note_index = ((rounded_semitones % 12) + 12) % 12;
+        
+        // Map to note based on distance from A
+        match note_index {
+            0 => Note::A,
+            1 => Note::ASharp,
+            2 => Note::B,
+            3 => Note::C,
+            4 => Note::CSharp,
+            5 => Note::D,
+            6 => Note::DSharp,
+            7 => Note::E,
+            8 => Note::F,
+            9 => Note::FSharp,
+            10 => Note::G,
+            11 => Note::GSharp,
+            _ => Note::A, // Should never happen due to modulo
+        }
+    }
 }
 
 /// Musical scales with interval definitions

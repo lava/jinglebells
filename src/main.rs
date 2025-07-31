@@ -15,11 +15,11 @@ struct Cli {
 enum Preset {
     /// Generate a gentle notification sound
     Notification {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -41,11 +41,11 @@ enum Preset {
     },
     /// Generate an attention-grabbing alert
     Alert {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -67,11 +67,11 @@ enum Preset {
     },
     /// Generate a pleasant success chime
     Success {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -93,11 +93,11 @@ enum Preset {
     },
     /// Generate a warning error sound
     Error {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -119,11 +119,11 @@ enum Preset {
     },
     /// Generate a system startup jingle
     Startup {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -145,11 +145,11 @@ enum Preset {
     },
     /// Generate a system shutdown sound
     Shutdown {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -171,11 +171,11 @@ enum Preset {
     },
     /// Generate a message received notification
     Message {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -197,11 +197,11 @@ enum Preset {
     },
     /// Generate a task completion sound
     Completion {
-        /// Duration in seconds (0.5-3.0) - NOTE: Currently not implemented, presets use fixed durations
+        /// Duration in seconds (0.5-3.0)
         #[arg(short, long, default_value = "1.0")]
         duration: f32,
         
-        /// Base frequency in Hz (200-800) - NOTE: Currently not implemented, presets use fixed frequencies  
+        /// Base frequency in Hz (200-800)
         #[arg(short, long, default_value = "440.0")]
         frequency: f32,
         
@@ -244,15 +244,21 @@ impl From<WaveFormArg> for WaveForm {
 
 impl Preset {
     fn generate_samples(&self, generator: &JingleGenerator) -> Vec<f32> {
+        let (_, _, _, duration, frequency) = self.get_params();
+        
+        // Convert values to None if they are the defaults (meaning user didn't specify them)
+        let duration_opt = if duration != 1.0 { Some(duration) } else { None };
+        let frequency_opt = if frequency != 440.0 { Some(frequency) } else { None };
+        
         match self {
-            Preset::Notification { waveform, .. } => generator.create_notification_jingle(WaveForm::from(*waveform)),
-            Preset::Alert { waveform, .. } => generator.create_alert_jingle(WaveForm::from(*waveform)),
-            Preset::Success { waveform, .. } => generator.create_success_jingle(WaveForm::from(*waveform)),
-            Preset::Error { waveform, .. } => generator.create_error_jingle(WaveForm::from(*waveform)),
-            Preset::Startup { waveform, .. } => generator.create_startup_jingle(WaveForm::from(*waveform)),
-            Preset::Shutdown { waveform, .. } => generator.create_shutdown_jingle(WaveForm::from(*waveform)),
-            Preset::Message { waveform, .. } => generator.create_message_jingle(WaveForm::from(*waveform)),
-            Preset::Completion { waveform, .. } => generator.create_completion_jingle(WaveForm::from(*waveform)),
+            Preset::Notification { waveform, .. } => generator.create_notification_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Alert { waveform, .. } => generator.create_alert_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Success { waveform, .. } => generator.create_success_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Error { waveform, .. } => generator.create_error_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Startup { waveform, .. } => generator.create_startup_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Shutdown { waveform, .. } => generator.create_shutdown_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Message { waveform, .. } => generator.create_message_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
+            Preset::Completion { waveform, .. } => generator.create_completion_jingle(WaveForm::from(*waveform), duration_opt, frequency_opt),
         }
     }
     
@@ -321,10 +327,6 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         std::process::exit(1);
     }
     
-    // Note: duration and frequency parameters are currently not implemented
-    if duration != 1.0 || frequency != 440.0 {
-        println!("Note: Duration and frequency parameters are not currently implemented (presets use fixed values)");
-    }
     
     // Note: seed parameter is accepted but not currently used since presets are deterministic
     if seed.is_some() {
