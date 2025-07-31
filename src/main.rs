@@ -28,7 +28,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "notification.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -58,7 +58,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "alert.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -88,7 +88,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "success.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -118,7 +118,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "error.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -148,7 +148,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "startup.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -178,7 +178,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "shutdown.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -208,7 +208,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "message.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -238,7 +238,7 @@ enum Preset {
         waveform: WaveFormArg,
         
         /// Output file path
-        #[arg(short, long, default_value = "completion.wav")]
+        #[arg(short, long, default_value = "output.wav")]
         output: PathBuf,
         
         /// Number of variations to generate
@@ -370,7 +370,7 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
-    let (output, count, seed, _duration, _frequency, generate_only) = cli.preset.get_params();
+    let (output, count, seed, duration, frequency, generate_only) = cli.preset.get_params();
     let waveform = cli.preset.get_waveform();
     
     // Validate parameters
@@ -379,39 +379,53 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         std::process::exit(1);
     }
     
-    let mut generator = if let Some(seed_value) = seed {
-        println!("Using fixed seed: {}", seed_value);
+    let _generator = if let Some(seed_value) = seed {
         JingleGenerator::with_seed(seed_value)
     } else {
         JingleGenerator::new()
     };
     
-    println!("Generating {} jingle(s)...", count);
-    println!("Preset: {} ({})", cli.preset.name(), cli.preset.description());
-    println!("Waveform: {:?}", waveform);
+    // Build the CLI command that would generate the same audio
+    let mut cmd = format!("jinglemaker {}", cli.preset.name());
     
-    for i in 0..count {
-        let samples = cli.preset.generate_samples(&mut generator);
-        
-        let output_path = if count == 1 {
-            output.clone()
-        } else {
-            let stem = output.file_stem().unwrap_or_default().to_string_lossy();
-            let extension = output.extension().unwrap_or_default().to_string_lossy();
-            let parent = output.parent().unwrap_or_else(|| std::path::Path::new("."));
-            parent.join(format!("{}_{}.{}", stem, i + 1, extension))
-        };
-        
-        generator.export_to_wav(&samples, &output_path)?;
-        println!("✓ Generated {} ({} samples)", output_path.display(), samples.len());
-        
-        if !generate_only {
-            println!("🔊 Playing {}...", output_path.display());
-            play_samples(&samples)?;
-        }
+    // Add non-default parameters to the command
+    if duration != 1.0 {
+        cmd.push_str(&format!(" --duration {}", duration));
+    }
+    if frequency != 440.0 {
+        cmd.push_str(&format!(" --frequency {}", frequency));
+    }
+    if waveform != WaveFormArg::Sine && !is_default_waveform_for_preset(&cli.preset, waveform) {
+        cmd.push_str(&format!(" --waveform {:?}", waveform).to_lowercase());
+    }
+    if output.to_string_lossy() != "output.wav" {
+        cmd.push_str(&format!(" --output {}", output.display()));
+    }
+    if count != 1 {
+        cmd.push_str(&format!(" --count {}", count));
+    }
+    if let Some(seed_value) = seed {
+        cmd.push_str(&format!(" --seed {}", seed_value));
+    }
+    if generate_only {
+        cmd.push_str(" --generate-only");
     }
     
-    println!("\n🎵 Jingle generation complete!");
+    // Print the command
+    println!("{}", cmd);
     
     Ok(())
+}
+
+fn is_default_waveform_for_preset(preset: &Preset, waveform: WaveFormArg) -> bool {
+    match preset {
+        Preset::Notification { .. } => waveform == WaveFormArg::Sine,
+        Preset::Alert { .. } => waveform == WaveFormArg::Square,
+        Preset::Success { .. } => waveform == WaveFormArg::Triangle,
+        Preset::Error { .. } => waveform == WaveFormArg::Sawtooth,
+        Preset::Startup { .. } => waveform == WaveFormArg::Sine,
+        Preset::Shutdown { .. } => waveform == WaveFormArg::Sine,
+        Preset::Message { .. } => waveform == WaveFormArg::Sine,
+        Preset::Completion { .. } => waveform == WaveFormArg::Sine,
+    }
 }
