@@ -38,6 +38,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate an attention-grabbing alert
     Alert {
@@ -64,6 +68,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a pleasant success chime
     Success {
@@ -90,6 +98,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a warning error sound
     Error {
@@ -116,6 +128,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a system startup jingle
     Startup {
@@ -142,6 +158,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a system shutdown sound
     Shutdown {
@@ -168,6 +188,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a message received notification
     Message {
@@ -194,6 +218,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
     /// Generate a task completion sound
     Completion {
@@ -220,6 +248,10 @@ enum Preset {
         /// Seed for reproducible generation
         #[arg(short, long)]
         seed: Option<u64>,
+        
+        /// Play the sound after generation
+        #[arg(short, long)]
+        play: bool,
     },
 }
 
@@ -244,7 +276,7 @@ impl From<WaveFormArg> for WaveForm {
 
 impl Preset {
     fn generate_samples(&self, generator: &mut JingleGenerator) -> Vec<f32> {
-        let (_, _, _, duration, frequency) = self.get_params();
+        let (_, _, _, duration, frequency, _) = self.get_params();
         
         // Convert values to None if they are the defaults (meaning user didn't specify them)
         let duration_opt = if duration != 1.0 { Some(duration) } else { None };
@@ -262,16 +294,16 @@ impl Preset {
         }
     }
     
-    fn get_params(&self) -> (PathBuf, u32, Option<u64>, f32, f32) {
+    fn get_params(&self) -> (PathBuf, u32, Option<u64>, f32, f32, bool) {
         match self {
-            Preset::Notification { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Alert { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Success { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Error { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Startup { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Shutdown { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Message { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
-            Preset::Completion { output, count, seed, duration, frequency, .. } => (output.clone(), *count, *seed, *duration, *frequency),
+            Preset::Notification { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Alert { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Success { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Error { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Startup { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Shutdown { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Message { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Completion { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
         }
     }
     
@@ -315,10 +347,30 @@ impl Preset {
     }
 }
 
+fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
+    // Get output stream handle
+    let stream_handle = rodio::OutputStreamBuilder::open_default_stream()
+        .map_err(|e| jinglemaker::JingleError::PlaybackError(e.to_string()))?;
+    
+    // Create sink connected to the stream
+    let sink = rodio::Sink::connect_new(&stream_handle.mixer());
+    
+    // Convert samples to the format rodio expects
+    let source = rodio::buffer::SamplesBuffer::new(1, jinglemaker::SAMPLE_RATE, samples.to_vec());
+    
+    // Add the source to the sink
+    sink.append(source);
+    
+    // Block until playback is complete
+    sink.sleep_until_end();
+    
+    Ok(())
+}
+
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
-    let (output, count, seed, _duration, _frequency) = cli.preset.get_params();
+    let (output, count, seed, _duration, _frequency, play) = cli.preset.get_params();
     let waveform = cli.preset.get_waveform();
     
     // Validate parameters
@@ -352,6 +404,11 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         
         generator.export_to_wav(&samples, &output_path)?;
         println!("✓ Generated {} ({} samples)", output_path.display(), samples.len());
+        
+        if play {
+            println!("🔊 Playing {}...", output_path.display());
+            play_samples(&samples)?;
+        }
     }
     
     println!("\n🎵 Jingle generation complete!");

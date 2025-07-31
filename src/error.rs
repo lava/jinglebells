@@ -13,6 +13,8 @@ pub enum JingleError {
     WavError(hound::Error),
     /// Invalid parameter error
     InvalidParameter(String),
+    /// Audio playback error
+    PlaybackError(String),
 }
 
 impl fmt::Display for JingleError {
@@ -22,6 +24,7 @@ impl fmt::Display for JingleError {
             JingleError::IoError(err) => write!(f, "I/O error: {}", err),
             JingleError::WavError(err) => write!(f, "WAV encoding error: {}", err),
             JingleError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
+            JingleError::PlaybackError(msg) => write!(f, "Audio playback error: {}", msg),
         }
     }
 }
