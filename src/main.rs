@@ -318,7 +318,7 @@ impl Preset {
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
-    let (output, count, seed, duration, frequency) = cli.preset.get_params();
+    let (output, count, seed, _duration, _frequency) = cli.preset.get_params();
     let waveform = cli.preset.get_waveform();
     
     // Validate parameters

@@ -239,7 +239,7 @@ impl Melody {
     }
     
     /// Create a melody from a scale with a given pattern
-    pub fn from_scale(scale: Scale, root: Note, octave: i32, pattern: MelodyPattern, note_duration: f32) -> Self {
+    pub fn from_scale(scale: Scale, root: Note, _octave: i32, pattern: MelodyPattern, note_duration: f32) -> Self {
         let scale_notes = scale.notes(root);
         let mut notes = Vec::new();
         
@@ -288,7 +288,7 @@ impl Melody {
     }
     
     /// Create a melody from a chord with a given pattern
-    pub fn from_chord(chord: Chord, octave: i32, pattern: MelodyPattern, note_duration: f32) -> Self {
+    pub fn from_chord(chord: Chord, _octave: i32, pattern: MelodyPattern, note_duration: f32) -> Self {
         let chord_notes = chord.notes();
         let mut notes = Vec::new();
         
