@@ -39,9 +39,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate an attention-grabbing alert
     Alert {
@@ -69,9 +69,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a pleasant success chime
     Success {
@@ -99,9 +99,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a warning error sound
     Error {
@@ -129,9 +129,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a system startup jingle
     Startup {
@@ -159,9 +159,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a system shutdown sound
     Shutdown {
@@ -189,9 +189,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a message received notification
     Message {
@@ -219,9 +219,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
     /// Generate a task completion sound
     Completion {
@@ -249,9 +249,9 @@ enum Preset {
         #[arg(short, long)]
         seed: Option<u64>,
         
-        /// Play the sound after generation
+        /// Generate file only without playing
         #[arg(short, long)]
-        play: bool,
+        generate_only: bool,
     },
 }
 
@@ -296,14 +296,14 @@ impl Preset {
     
     fn get_params(&self) -> (PathBuf, u32, Option<u64>, f32, f32, bool) {
         match self {
-            Preset::Notification { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Alert { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Success { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Error { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Startup { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Shutdown { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Message { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
-            Preset::Completion { output, count, seed, duration, frequency, play, .. } => (output.clone(), *count, *seed, *duration, *frequency, *play),
+            Preset::Notification { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Alert { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Success { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Error { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Startup { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Shutdown { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Message { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
+            Preset::Completion { output, count, seed, duration, frequency, generate_only, .. } => (output.clone(), *count, *seed, *duration, *frequency, *generate_only),
         }
     }
     
@@ -370,7 +370,7 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
-    let (output, count, seed, _duration, _frequency, play) = cli.preset.get_params();
+    let (output, count, seed, _duration, _frequency, generate_only) = cli.preset.get_params();
     let waveform = cli.preset.get_waveform();
     
     // Validate parameters
@@ -405,7 +405,7 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         generator.export_to_wav(&samples, &output_path)?;
         println!("✓ Generated {} ({} samples)", output_path.display(), samples.len());
         
-        if play {
+        if !generate_only {
             println!("🔊 Playing {}...", output_path.display());
             play_samples(&samples)?;
         }
