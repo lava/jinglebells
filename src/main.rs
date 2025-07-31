@@ -1,6 +1,8 @@
 use rodio::source::Source;
 use std::time::Duration;
 use std::f32::consts::PI;
+use std::path::Path;
+use hound::{WavSpec, WavWriter, SampleFormat};
 
 const SAMPLE_RATE: u32 = 44100;
 const A4_FREQUENCY: f32 = 440.0;
@@ -442,38 +444,158 @@ impl Source for Oscillator {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Jingle Maker - Rust Audio Generator");
-    println!("Musical Pattern Generators Implemented!");
-    
-    // Test scale generation
-    let c_major_scale = Scale::Major.notes(Note::C);
-    println!("C Major scale: {:?}", c_major_scale);
-    
-    // Test chord generation
-    let c_major_chord = Chord::major(Note::C);
-    println!("C Major chord notes: {:?}", c_major_chord.notes());
-    
-    // Test melody generation
-    let melody = Melody::from_scale(Scale::Pentatonic, Note::C, 4, MelodyPattern::Arpeggio, 0.25);
-    println!("Generated melody with {} notes", melody.notes.len());
-    
-    // Test frequency calculation
-    let c4_freq = Note::C.frequency(4);
-    let a4_freq = Note::A.frequency(4);
-    println!("C4 frequency: {:.2}Hz, A4 frequency: {:.2}Hz", c4_freq, a4_freq);
-    
-    // Generate a sample using the first note of the melody
-    if let Some((note, duration)) = melody.notes.first() {
-        let freq = note.frequency(4);
-        println!("Testing oscillator with {}Hz for {:.2}s", freq, duration);
-        
-        let oscillator = Oscillator::new(freq, WaveForm::Sine, *duration);
-        let samples: Vec<f32> = oscillator.take(1000).collect();
-        println!("Generated {} samples", samples.len());
-        println!("First few samples: {:?}", &samples[0..5]);
+pub struct JingleGenerator {
+    sample_rate: u32,
+}
+
+impl JingleGenerator {
+    pub fn new() -> Self {
+        Self {
+            sample_rate: SAMPLE_RATE,
+        }
     }
     
-    println!("Musical pattern generators are working!");
+    pub fn generate_melody_samples(&self, melody: &Melody, octave: i32, waveform: WaveForm) -> Vec<f32> {
+        let mut all_samples = Vec::new();
+        
+        for (note, duration) in &melody.notes {
+            let frequency = note.frequency(octave);
+            let oscillator = Oscillator::new(frequency, waveform, *duration);
+            let samples: Vec<f32> = oscillator.collect();
+            all_samples.extend(samples);
+        }
+        
+        all_samples
+    }
+    
+    pub fn export_to_wav<P: AsRef<Path>>(&self, samples: &[f32], path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let spec = WavSpec {
+            channels: 1,
+            sample_rate: self.sample_rate,
+            bits_per_sample: 16,
+            sample_format: SampleFormat::Int,
+        };
+        
+        let mut writer = WavWriter::create(path, spec)?;
+        
+        for &sample in samples {
+            // Convert f32 sample (-1.0 to 1.0) to i16
+            let sample_i16 = (sample * i16::MAX as f32) as i16;
+            writer.write_sample(sample_i16)?;
+        }
+        
+        writer.finalize()?;
+        Ok(())
+    }
+    
+    pub fn create_notification_jingle(&self, waveform: WaveForm) -> Vec<f32> {
+        // Create a pleasant notification sound using C major pentatonic
+        let melody = Melody::from_scale(
+            Scale::Pentatonic, 
+            Note::C, 
+            5, 
+            MelodyPattern::Arpeggio, 
+            0.15
+        );
+        
+        self.generate_melody_samples(&melody, 5, waveform)
+    }
+    
+    pub fn create_success_jingle(&self, waveform: WaveForm) -> Vec<f32> {
+        // Create an uplifting success sound using ascending C major
+        let melody = Melody::from_scale(
+            Scale::Major,
+            Note::C,
+            4,
+            MelodyPattern::Ascending,
+            0.2
+        );
+        
+        self.generate_melody_samples(&melody, 4, waveform)
+    }
+    
+    pub fn create_alert_jingle(&self, waveform: WaveForm) -> Vec<f32> {
+        // Create an attention-grabbing alert using repeated high notes
+        let mut samples = Vec::new();
+        
+        // Two short beeps
+        for _ in 0..2 {
+            let oscillator = Oscillator::new(Note::G.frequency(6), waveform, 0.1);
+            let beep_samples: Vec<f32> = oscillator.collect();
+            samples.extend(beep_samples);
+            
+            // Small gap between beeps
+            let silence_samples = (self.sample_rate as f32 * 0.05) as usize;
+            samples.extend(vec![0.0; silence_samples]);
+        }
+        
+        samples
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Jingle Maker - Rust Audio Generator with WAV Export");
+    println!("==============================================");
+    
+    let generator = JingleGenerator::new();
+    
+    // Generate and export different types of jingles
+    println!("Generating notification jingle...");
+    let notification_samples = generator.create_notification_jingle(WaveForm::Sine);
+    generator.export_to_wav(&notification_samples, "notification.wav")?;
+    println!("✓ Exported notification.wav ({} samples)", notification_samples.len());
+    
+    println!("Generating success jingle...");
+    let success_samples = generator.create_success_jingle(WaveForm::Triangle);
+    generator.export_to_wav(&success_samples, "success.wav")?;
+    println!("✓ Exported success.wav ({} samples)", success_samples.len());
+    
+    println!("Generating alert jingle...");
+    let alert_samples = generator.create_alert_jingle(WaveForm::Square);
+    generator.export_to_wav(&alert_samples, "alert.wav")?;
+    println!("✓ Exported alert.wav ({} samples)", alert_samples.len());
+    
+    // Test different waveforms with the same melody
+    println!("\nGenerating waveform variations...");
+    let test_melody = Melody::from_scale(Scale::Major, Note::C, 4, MelodyPattern::Arpeggio, 0.3);
+    
+    let waveforms = [
+        (WaveForm::Sine, "sine_arpeggio.wav"),
+        (WaveForm::Triangle, "triangle_arpeggio.wav"),
+        (WaveForm::Sawtooth, "sawtooth_arpeggio.wav"),
+        (WaveForm::Square, "square_arpeggio.wav"),
+    ];
+    
+    for (waveform, filename) in waveforms {
+        let samples = generator.generate_melody_samples(&test_melody, 4, waveform);
+        generator.export_to_wav(&samples, filename)?;
+        println!("✓ Exported {} ({} samples)", filename, samples.len());
+    }
+    
+    // Test chord progression export
+    println!("\nGenerating chord progression jingle...");
+    let chord_progression = ChordProgression::Pop.get_chords(Note::C);
+    let mut chord_samples = Vec::new();
+    
+    for chord in chord_progression {
+        let chord_melody = Melody::from_chord(chord, 4, MelodyPattern::Arpeggio, 0.2);
+        let samples = generator.generate_melody_samples(&chord_melody, 4, WaveForm::Sine);
+        chord_samples.extend(samples);
+    }
+    
+    generator.export_to_wav(&chord_samples, "chord_progression.wav")?;
+    println!("✓ Exported chord_progression.wav ({} samples)", chord_samples.len());
+    
+    println!("\n🎵 WAV export functionality is working!");
+    println!("Generated files:");
+    println!("  - notification.wav (C pentatonic arpeggio, sine wave)");
+    println!("  - success.wav (C major ascending, triangle wave)");
+    println!("  - alert.wav (double beep, square wave)");
+    println!("  - sine_arpeggio.wav (C major arpeggio, sine wave)");
+    println!("  - triangle_arpeggio.wav (C major arpeggio, triangle wave)");
+    println!("  - sawtooth_arpeggio.wav (C major arpeggio, sawtooth wave)");
+    println!("  - square_arpeggio.wav (C major arpeggio, square wave)");
+    println!("  - chord_progression.wav (Pop progression I-V-vi-IV)");
+    
     Ok(())
 }
