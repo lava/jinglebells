@@ -371,7 +371,6 @@ fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
     let (output, count, seed, duration, frequency, generate_only) = cli.preset.get_params();
-    let waveform = cli.preset.get_waveform();
     
     // Validate parameters
     if count == 0 || count > 100 {
@@ -379,40 +378,35 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         std::process::exit(1);
     }
     
-    let _generator = if let Some(seed_value) = seed {
+    let mut generator = if let Some(seed_value) = seed {
         JingleGenerator::with_seed(seed_value)
     } else {
         JingleGenerator::new()
     };
     
-    // Build the CLI command that would generate the same audio
-    let mut cmd = format!("jinglemaker {}", cli.preset.name());
-    
-    // Add non-default parameters to the command
-    if duration != 1.0 {
-        cmd.push_str(&format!(" --duration {}", duration));
+    for i in 0..count {
+        let samples = cli.preset.generate_samples(&mut generator);
+        
+        // Save to file if generate_only is specified
+        if generate_only {
+            if count > 1 {
+                let file_stem = output.file_stem().unwrap_or_default().to_string_lossy();
+                let file_ext = output.extension().unwrap_or_default().to_string_lossy();
+                let numbered_output = if file_ext.is_empty() {
+                    format!("{}_{}", file_stem, i)
+                } else {
+                    format!("{}_{}.{}", file_stem, i, file_ext)
+                };
+                let numbered_path = output.with_file_name(&numbered_output);
+                generator.export_to_wav(&samples, &numbered_path)?;
+            } else {
+                generator.export_to_wav(&samples, &output)?;
+            }
+        } else {
+            // Play audio by default
+            play_samples(&samples)?;
+        }
     }
-    if frequency != 440.0 {
-        cmd.push_str(&format!(" --frequency {}", frequency));
-    }
-    if waveform != WaveFormArg::Sine && !is_default_waveform_for_preset(&cli.preset, waveform) {
-        cmd.push_str(&format!(" --waveform {:?}", waveform).to_lowercase());
-    }
-    if output.to_string_lossy() != "output.wav" {
-        cmd.push_str(&format!(" --output {}", output.display()));
-    }
-    if count != 1 {
-        cmd.push_str(&format!(" --count {}", count));
-    }
-    if let Some(seed_value) = seed {
-        cmd.push_str(&format!(" --seed {}", seed_value));
-    }
-    if generate_only {
-        cmd.push_str(" --generate-only");
-    }
-    
-    // Print the command
-    println!("{}", cmd);
     
     Ok(())
 }
