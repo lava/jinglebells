@@ -1,7 +1,9 @@
-//! WAV file export functionality
+//! Audio file export functionality (WAV and MP3)
 
 use std::path::Path;
 use hound::{WavSpec, WavWriter, SampleFormat};
+#[cfg(feature = "mp3")]
+use lame::Lame;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 use crate::{SAMPLE_RATE, audio::{Oscillator, WaveForm}, music::Melody, error::Result};
@@ -43,6 +45,19 @@ impl JingleGenerator {
         all_samples
     }
     
+    /// Export audio samples to a file, detecting format from extension
+    pub fn export_to_file<P: AsRef<Path>>(&self, samples: &[f32], path: P) -> Result<()> {
+        let path_ref = path.as_ref();
+        match path_ref.extension().and_then(|s| s.to_str()) {
+            Some("wav") => self.export_to_wav(samples, path),
+            #[cfg(feature = "mp3")]
+            Some("mp3") => self.export_to_mp3(samples, path, 192), // Default to 192 kbps
+            #[cfg(not(feature = "mp3"))]
+            Some("mp3") => Err(crate::error::JingleError::Mp3Error("MP3 support not enabled. Compile with --features mp3".to_string())),
+            _ => self.export_to_wav(samples, path), // Default to WAV
+        }
+    }
+    
     /// Export audio samples to a WAV file
     pub fn export_to_wav<P: AsRef<Path>>(&self, samples: &[f32], path: P) -> Result<()> {
         let spec = WavSpec {
@@ -62,6 +77,47 @@ impl JingleGenerator {
         
         writer.finalize()?;
         Ok(())
+    }
+    
+    /// Export audio samples to an MP3 file
+    #[cfg(feature = "mp3")]
+    pub fn export_to_mp3<P: AsRef<Path>>(&self, samples: &[f32], path: P, bitrate: u32) -> Result<()> {
+        use std::fs::File;
+        use std::io::Write;
+        
+        // Initialize LAME encoder
+        let mut lame = Lame::new()
+            .ok_or_else(|| crate::error::JingleError::Mp3Error("Failed to create LAME encoder".to_string()))?;
+        
+        lame.set_channels(1)?;
+        lame.set_sample_rate(self.sample_rate)?;
+        lame.set_kilobitrate(bitrate as i32)?;
+        lame.set_quality(0)?; // 0 = highest quality
+        lame.init_params()?;
+        
+        // Convert f32 samples to i16 for LAME encoder
+        let i16_samples: Vec<i16> = samples.iter()
+            .map(|&sample| (sample * i16::MAX as f32) as i16)
+            .collect();
+        
+        // Prepare output buffer (estimate size)
+        let mut mp3_buffer = vec![0u8; i16_samples.len() * 5 / 4 + 7200];
+        
+        // Encode to MP3 (mono, so use same channel for left and right)
+        let bytes_written = lame.encode(&i16_samples, &i16_samples, &mut mp3_buffer)?;
+        mp3_buffer.truncate(bytes_written);
+        
+        // Write to file
+        let mut file = File::create(path)?;
+        file.write_all(&mp3_buffer)?;
+        
+        Ok(())
+    }
+    
+    /// Export audio samples to MP3 with configurable bitrate
+    #[cfg(feature = "mp3")]
+    pub fn export_to_mp3_with_bitrate<P: AsRef<Path>>(&self, samples: &[f32], path: P, bitrate: u32) -> Result<()> {
+        self.export_to_mp3(samples, path, bitrate)
     }
     
     /// Generate a single tone with specified parameters

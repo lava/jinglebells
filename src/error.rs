@@ -11,6 +11,8 @@ pub enum JingleError {
     IoError(std::io::Error),
     /// WAV encoding error
     WavError(hound::Error),
+    /// MP3 encoding error
+    Mp3Error(String),
     /// Invalid parameter error
     InvalidParameter(String),
     /// Audio playback error
@@ -23,6 +25,7 @@ impl fmt::Display for JingleError {
             JingleError::AudioError(msg) => write!(f, "Audio generation error: {}", msg),
             JingleError::IoError(err) => write!(f, "I/O error: {}", err),
             JingleError::WavError(err) => write!(f, "WAV encoding error: {}", err),
+            JingleError::Mp3Error(msg) => write!(f, "MP3 encoding error: {}", msg),
             JingleError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
             JingleError::PlaybackError(msg) => write!(f, "Audio playback error: {}", msg),
         }
@@ -48,6 +51,20 @@ impl From<std::io::Error> for JingleError {
 impl From<hound::Error> for JingleError {
     fn from(err: hound::Error) -> Self {
         JingleError::WavError(err)
+    }
+}
+
+#[cfg(feature = "mp3")]
+impl From<lame::EncodeError> for JingleError {
+    fn from(err: lame::EncodeError) -> Self {
+        JingleError::Mp3Error(format!("MP3 encode error: {:?}", err))
+    }
+}
+
+#[cfg(feature = "mp3")]
+impl From<lame::Error> for JingleError {
+    fn from(err: lame::Error) -> Self {
+        JingleError::Mp3Error(format!("MP3 error: {:?}", err))
     }
 }
 

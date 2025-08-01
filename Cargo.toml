@@ -9,3 +9,8 @@ cpal = "0.16.0"
 rodio = "0.21.1"
 hound = "3.5"
 rand = "0.8"
+lame = { version = "0.1.3", optional = true }
+
+[features]
+default = ["mp3"]
+mp3 = ["lame"]

@@ -444,9 +444,9 @@ fn main() -> Result<(), jinglemaker::JingleError> {
                     format!("{}_{}.{}", file_stem, i, file_ext)
                 };
                 let numbered_path = output.with_file_name(&numbered_output);
-                generator.export_to_wav(&samples, &numbered_path)?;
+                generator.export_to_file(&samples, &numbered_path)?;
             } else {
-                generator.export_to_wav(&samples, &output)?;
+                generator.export_to_file(&samples, &output)?;
             }
         } else {
             // Play audio by default
