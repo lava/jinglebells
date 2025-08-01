@@ -14,7 +14,7 @@
 //! ## Example
 //! 
 //! ```rust
-//! use jinglemaker::{JingleGenerator, WaveForm};
+//! use jinglebells::{JingleGenerator, WaveForm};
 //! 
 //! let mut generator = JingleGenerator::new();
 //! let samples = generator.create_notification_jingle(WaveForm::Sine, None, None);

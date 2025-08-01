@@ -1,9 +1,9 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use jinglemaker::{JingleGenerator, WaveForm};
+use jinglebells::{JingleGenerator, WaveForm};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "jinglemaker")]
+#[command(name = "jinglebells")]
 #[command(about = "A CLI jingle generator using Rust and Rodio")]
 #[command(version = "0.1.0")]
 struct Cli {
@@ -309,10 +309,10 @@ impl Preset {
     
 }
 
-fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
+fn play_samples(samples: &[f32]) -> Result<(), jinglebells::JingleError> {
     // Get output stream handle
     let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()
-        .map_err(|e| jinglemaker::JingleError::PlaybackError(e.to_string()))?;
+        .map_err(|e| jinglebells::JingleError::PlaybackError(e.to_string()))?;
     
     // Disable drop logging to avoid interfering with CLI output
     stream_handle.log_on_drop(false);
@@ -321,7 +321,7 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());
     
     // Convert samples to the format rodio expects
-    let source = rodio::buffer::SamplesBuffer::new(1, jinglemaker::SAMPLE_RATE, samples.to_vec());
+    let source = rodio::buffer::SamplesBuffer::new(1, jinglebells::SAMPLE_RATE, samples.to_vec());
     
     // Add the source to the sink
     sink.append(source);
@@ -334,9 +334,9 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
 
 fn print_file_write_command(preset: &Preset, seed: u64) {
     let current_exe = std::env::current_exe()
-        .unwrap_or_else(|_| std::path::PathBuf::from("jinglemaker"));
+        .unwrap_or_else(|_| std::path::PathBuf::from("jinglebells"));
     let exe_name = current_exe.file_name()
-        .unwrap_or_else(|| std::ffi::OsStr::new("jinglemaker"))
+        .unwrap_or_else(|| std::ffi::OsStr::new("jinglebells"))
         .to_string_lossy();
     
     let mut cmd_args = Vec::new();
@@ -406,7 +406,7 @@ fn print_file_write_command(preset: &Preset, seed: u64) {
     println!("{} {}", exe_name, cmd_args.join(" "));
 }
 
-fn main() -> Result<(), jinglemaker::JingleError> {
+fn main() -> Result<(), jinglebells::JingleError> {
     let cli = Cli::parse();
     
     let (output, count, seed, _duration, _frequency, generate_only) = cli.preset.get_params();
