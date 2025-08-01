@@ -329,6 +329,80 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
     Ok(())
 }
 
+fn print_file_write_command(preset: &Preset, seed: u64) {
+    let current_exe = std::env::current_exe()
+        .unwrap_or_else(|_| std::path::PathBuf::from("jinglemaker"));
+    let exe_name = current_exe.file_name()
+        .unwrap_or_else(|| std::ffi::OsStr::new("jinglemaker"))
+        .to_string_lossy();
+    
+    let mut cmd_args = Vec::new();
+    
+    // Add the preset name
+    let preset_name = match preset {
+        Preset::Notification { .. } => "notification",
+        Preset::Alert { .. } => "alert", 
+        Preset::Success { .. } => "success",
+        Preset::Error { .. } => "error",
+        Preset::Startup { .. } => "startup",
+        Preset::Shutdown { .. } => "shutdown",
+        Preset::Message { .. } => "message",
+        Preset::Completion { .. } => "completion",
+    };
+    cmd_args.push(preset_name.to_string());
+    
+    // Extract parameters from the preset
+    let (output, count, _, duration, frequency, _) = preset.get_params();
+    
+    // Add all the parameters that reproduce the exact same sound
+    if duration != 1.0 {
+        cmd_args.push("--duration".to_string());
+        cmd_args.push(duration.to_string());
+    }
+    
+    if frequency != 440.0 {
+        cmd_args.push("--frequency".to_string());
+        cmd_args.push(frequency.to_string());
+    }
+    
+    // Add waveform if it's not the default for this preset
+    let waveform_arg = match preset {
+        Preset::Notification { waveform, .. } => if *waveform != WaveFormArg::Sine { Some(format!("{:?}", waveform).to_lowercase()) } else { None },
+        Preset::Alert { waveform, .. } => if *waveform != WaveFormArg::Square { Some(format!("{:?}", waveform).to_lowercase()) } else { None },
+        Preset::Success { waveform, .. } => if *waveform != WaveFormArg::Triangle { Some(format!("{:?}", waveform).to_lowercase()) } else { None },
+        Preset::Error { waveform, .. } => if *waveform != WaveFormArg::Sawtooth { Some(format!("{:?}", waveform).to_lowercase()) } else { None },
+        Preset::Startup { waveform, .. } | Preset::Shutdown { waveform, .. } | Preset::Message { waveform, .. } | Preset::Completion { waveform, .. } => {
+            if *waveform != WaveFormArg::Sine { Some(format!("{:?}", waveform).to_lowercase()) } else { None }
+        },
+    };
+    
+    if let Some(wf) = waveform_arg {
+        cmd_args.push("--waveform".to_string());
+        cmd_args.push(wf);
+    }
+    
+    // Always add the seed to ensure reproducibility
+    cmd_args.push("--seed".to_string());
+    cmd_args.push(seed.to_string());
+    
+    // Add count if not 1
+    if count != 1 {
+        cmd_args.push("--count".to_string());
+        cmd_args.push(count.to_string());
+    }
+    
+    // Add explicit output path
+    cmd_args.push("--output".to_string());
+    cmd_args.push(output.to_string_lossy().to_string());
+    
+    // Add --generate-only flag
+    cmd_args.push("--generate-only".to_string());
+    
+    // Print the command
+    println!("To write this sound to a file, run:");
+    println!("{} {}", exe_name, cmd_args.join(" "));
+}
+
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
@@ -340,11 +414,18 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         std::process::exit(1);
     }
     
-    let mut generator = if let Some(seed_value) = seed {
-        JingleGenerator::with_seed(seed_value)
-    } else {
-        JingleGenerator::new()
-    };
+    // Always use a seed - generate one if not provided
+    let actual_seed = seed.unwrap_or_else(|| {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        use std::time::{SystemTime, UNIX_EPOCH};
+        
+        let mut hasher = DefaultHasher::new();
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos().hash(&mut hasher);
+        hasher.finish()
+    });
+    
+    let mut generator = JingleGenerator::with_seed(actual_seed);
     
     for i in 0..count {
         let samples = cli.preset.generate_samples(&mut generator);
@@ -367,6 +448,9 @@ fn main() -> Result<(), jinglemaker::JingleError> {
         } else {
             // Play audio by default
             play_samples(&samples)?;
+            
+            // Print the command to write this sound to a file
+            print_file_write_command(&cli.preset, actual_seed);
         }
     }
     
