@@ -332,7 +332,11 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglebells::JingleError> {
     Ok(())
 }
 
-fn print_file_write_command(preset: &Preset, seed: u64) {
+fn print_replay_command(preset: &Preset, seed: u64, seed_was_explicit: bool) {
+    // Don't print anything if an explicit seed was given
+    if seed_was_explicit {
+        return;
+    }
     let current_exe = std::env::current_exe()
         .unwrap_or_else(|_| std::path::PathBuf::from("jinglebells"));
     let exe_name = current_exe.file_name()
@@ -355,7 +359,7 @@ fn print_file_write_command(preset: &Preset, seed: u64) {
     cmd_args.push(preset_name.to_string());
     
     // Extract parameters from the preset
-    let (output, count, _, duration, frequency, _) = preset.get_params();
+    let (_output, count, _, duration, frequency, _) = preset.get_params();
     
     // Add all the parameters that reproduce the exact same sound
     if duration != 1.0 {
@@ -394,16 +398,8 @@ fn print_file_write_command(preset: &Preset, seed: u64) {
         cmd_args.push(count.to_string());
     }
     
-    // Add explicit output path
-    cmd_args.push("--output".to_string());
-    cmd_args.push(output.to_string_lossy().to_string());
-    
-    // Add --generate-only flag
-    cmd_args.push("--generate-only".to_string());
-    
     // Print the command
-    println!("To write this sound to a file, run:");
-    println!("{} {}", exe_name, cmd_args.join(" "));
+    println!("To replay this sound: {} {}", exe_name, cmd_args.join(" "));
 }
 
 fn main() -> Result<(), jinglebells::JingleError> {
@@ -452,8 +448,8 @@ fn main() -> Result<(), jinglebells::JingleError> {
             // Play audio by default
             play_samples(&samples)?;
             
-            // Print the command to write this sound to a file
-            print_file_write_command(&cli.preset, actual_seed);
+            // Print the replay command if seed wasn't explicit
+            print_replay_command(&cli.preset, actual_seed, seed.is_some());
         }
     }
     
