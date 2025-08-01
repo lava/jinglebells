@@ -311,8 +311,11 @@ impl Preset {
 
 fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
     // Get output stream handle
-    let stream_handle = rodio::OutputStreamBuilder::open_default_stream()
+    let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()
         .map_err(|e| jinglemaker::JingleError::PlaybackError(e.to_string()))?;
+    
+    // Disable drop logging to avoid interfering with CLI output
+    stream_handle.log_on_drop(false);
     
     // Create sink connected to the stream
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());
@@ -325,9 +328,6 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
     
     // Block until playback is complete
     sink.sleep_until_end();
-    
-    // Keep the stream handle alive until playback is done
-    drop(stream_handle);
     
     Ok(())
 }
