@@ -326,6 +326,9 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
     // Block until playback is complete
     sink.sleep_until_end();
     
+    // Keep the stream handle alive until playback is done
+    drop(stream_handle);
+    
     Ok(())
 }
 
