@@ -17,6 +17,8 @@ pub enum JingleError {
     InvalidParameter(String),
     /// Audio playback error
     PlaybackError(String),
+    /// Random number generation error
+    RandomError(String),
 }
 
 impl fmt::Display for JingleError {
@@ -28,6 +30,7 @@ impl fmt::Display for JingleError {
             JingleError::Mp3Error(msg) => write!(f, "MP3 encoding error: {}", msg),
             JingleError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
             JingleError::PlaybackError(msg) => write!(f, "Audio playback error: {}", msg),
+            JingleError::RandomError(msg) => write!(f, "Random generation error: {}", msg),
         }
     }
 }

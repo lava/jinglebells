@@ -12,6 +12,7 @@ use crate::{SAMPLE_RATE, audio::{Oscillator, WaveForm}, music::Melody, error::Re
 pub struct JingleGenerator {
     sample_rate: u32,
     rng: StdRng,
+    current_seed: Option<u64>,
 }
 
 impl JingleGenerator {
@@ -20,6 +21,7 @@ impl JingleGenerator {
         Self {
             sample_rate: SAMPLE_RATE,
             rng: StdRng::from_entropy(),
+            current_seed: None,
         }
     }
     
@@ -28,6 +30,58 @@ impl JingleGenerator {
         Self {
             sample_rate: SAMPLE_RATE,
             rng: StdRng::seed_from_u64(seed),
+            current_seed: Some(seed),
+        }
+    }
+
+    /// Create a reproducible generator from a string seed
+    pub fn with_string_seed(seed: &str) -> Self {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        seed.hash(&mut hasher);
+        let numeric_seed = hasher.finish();
+        
+        Self::with_seed(numeric_seed)
+    }
+
+    /// Reset the RNG to the original seed (if available)
+    pub fn reset_seed(&mut self) -> Result<()> {
+        if let Some(seed) = self.current_seed {
+            self.rng = StdRng::seed_from_u64(seed);
+            Ok(())
+        } else {
+            Err(crate::error::JingleError::RandomError("No seed available to reset".to_string()))
+        }
+    }
+
+    /// Set a new seed for the generator
+    pub fn set_seed(&mut self, seed: u64) {
+        self.rng = StdRng::seed_from_u64(seed);
+        self.current_seed = Some(seed);
+    }
+
+    /// Get the current seed (if available)
+    pub fn get_current_seed(&self) -> Option<u64> {
+        self.current_seed
+    }
+
+    /// Create a new generator with the same seed but independent state
+    pub fn fork(&self) -> Result<Self> {
+        if let Some(seed) = self.current_seed {
+            Ok(Self::with_seed(seed))
+        } else {
+            Err(crate::error::JingleError::RandomError("Cannot fork generator without seed".to_string()))
+        }
+    }
+
+    /// Create a new generator with a derived seed for consistent but different randomness
+    pub fn derive_seed(&self, variation: u64) -> Result<Self> {
+        if let Some(seed) = self.current_seed {
+            Ok(Self::with_seed(seed.wrapping_add(variation)))
+        } else {
+            Err(crate::error::JingleError::RandomError("Cannot derive seed without original seed".to_string()))
         }
     }
     
@@ -256,5 +310,63 @@ mod tests {
         assert_eq!(combined.len(), 6);
         assert_eq!(combined[0], 0.1);
         assert_eq!(combined[3], 0.4);
+    }
+
+    #[test]
+    fn test_seeded_generation() {
+        let mut gen1 = JingleGenerator::with_seed(12345);
+        let mut gen2 = JingleGenerator::with_seed(12345);
+        
+        // Same seed should produce same results
+        assert_eq!(gen1.random_variation(), gen2.random_variation());
+        assert_eq!(gen1.random_pitch_offset(), gen2.random_pitch_offset());
+    }
+
+    #[test]
+    fn test_string_seed() {
+        let mut gen1 = JingleGenerator::with_string_seed("test");
+        let mut gen2 = JingleGenerator::with_string_seed("test");
+        
+        // Same string seed should produce same results
+        assert_eq!(gen1.random_variation(), gen2.random_variation());
+    }
+
+    #[test]
+    fn test_seed_reset() {
+        let mut generator = JingleGenerator::with_seed(12345);
+        let first_value = generator.random_variation();
+        generator.random_variation(); // Advance state
+        
+        // Reset should go back to beginning
+        generator.reset_seed().unwrap();
+        assert_eq!(generator.random_variation(), first_value);
+    }
+
+    #[test]
+    fn test_fork_generator() {
+        let mut original = JingleGenerator::with_seed(12345);
+        let first_value = original.random_variation();
+        
+        // Fork should create independent copy with same seed
+        let mut forked = original.fork().unwrap();
+        assert_eq!(forked.random_variation(), first_value);
+    }
+
+    #[test]
+    fn test_derive_seed() {
+        let original = JingleGenerator::with_seed(12345);
+        let derived = original.derive_seed(100).unwrap();
+        
+        // Derived generator should have different but consistent seed
+        assert_eq!(derived.get_current_seed(), Some(12345u64.wrapping_add(100)));
+    }
+
+    #[test]
+    fn test_no_seed_operations() {
+        let generator = JingleGenerator::new();
+        
+        // Operations requiring seed should fail gracefully
+        assert!(generator.fork().is_err());
+        assert!(generator.derive_seed(100).is_err());
     }
 }

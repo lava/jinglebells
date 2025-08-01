@@ -26,12 +26,14 @@ pub mod music;
 pub mod export;
 pub mod presets;
 pub mod error;
+pub mod effects;
 
-pub use audio::{WaveForm, ADSR, Oscillator};
+pub use audio::{WaveForm, ADSR, Oscillator, LayeredOscillator, OscillatorLayer};
 pub use music::{Note, Scale, Chord, ChordProgression, Melody, MelodyPattern, RhythmPattern};
 pub use export::JingleGenerator;
 pub use presets::*;
 pub use error::JingleError;
+pub use effects::{DelayBuffer, Echo, Reverb, LowPassFilter, LowPass, AutomaticGainControl, AGC, normalize_samples, peak_normalize};
 
 /// Standard sample rate used throughout the library
 pub const SAMPLE_RATE: u32 = 44100;
