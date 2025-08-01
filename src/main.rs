@@ -307,44 +307,6 @@ impl Preset {
         }
     }
     
-    fn get_waveform(&self) -> WaveFormArg {
-        match self {
-            Preset::Notification { waveform, .. } => *waveform,
-            Preset::Alert { waveform, .. } => *waveform,
-            Preset::Success { waveform, .. } => *waveform,
-            Preset::Error { waveform, .. } => *waveform,
-            Preset::Startup { waveform, .. } => *waveform,
-            Preset::Shutdown { waveform, .. } => *waveform,
-            Preset::Message { waveform, .. } => *waveform,
-            Preset::Completion { waveform, .. } => *waveform,
-        }
-    }
-    
-    fn name(&self) -> &'static str {
-        match self {
-            Preset::Notification { .. } => "notification",
-            Preset::Alert { .. } => "alert",
-            Preset::Success { .. } => "success",
-            Preset::Error { .. } => "error",
-            Preset::Startup { .. } => "startup",
-            Preset::Shutdown { .. } => "shutdown",
-            Preset::Message { .. } => "message",
-            Preset::Completion { .. } => "completion",
-        }
-    }
-    
-    fn description(&self) -> &'static str {
-        match self {
-            Preset::Notification { .. } => "Gentle notification sound",
-            Preset::Alert { .. } => "Attention-grabbing alert",
-            Preset::Success { .. } => "Pleasant success chime",
-            Preset::Error { .. } => "Warning error sound",
-            Preset::Startup { .. } => "System startup jingle",
-            Preset::Shutdown { .. } => "System shutdown sound",
-            Preset::Message { .. } => "Message received notification",
-            Preset::Completion { .. } => "Task completion sound",
-        }
-    }
 }
 
 fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
@@ -370,7 +332,7 @@ fn play_samples(samples: &[f32]) -> Result<(), jinglemaker::JingleError> {
 fn main() -> Result<(), jinglemaker::JingleError> {
     let cli = Cli::parse();
     
-    let (output, count, seed, duration, frequency, generate_only) = cli.preset.get_params();
+    let (output, count, seed, _duration, _frequency, generate_only) = cli.preset.get_params();
     
     // Validate parameters
     if count == 0 || count > 100 {
@@ -411,15 +373,3 @@ fn main() -> Result<(), jinglemaker::JingleError> {
     Ok(())
 }
 
-fn is_default_waveform_for_preset(preset: &Preset, waveform: WaveFormArg) -> bool {
-    match preset {
-        Preset::Notification { .. } => waveform == WaveFormArg::Sine,
-        Preset::Alert { .. } => waveform == WaveFormArg::Square,
-        Preset::Success { .. } => waveform == WaveFormArg::Triangle,
-        Preset::Error { .. } => waveform == WaveFormArg::Sawtooth,
-        Preset::Startup { .. } => waveform == WaveFormArg::Sine,
-        Preset::Shutdown { .. } => waveform == WaveFormArg::Sine,
-        Preset::Message { .. } => waveform == WaveFormArg::Sine,
-        Preset::Completion { .. } => waveform == WaveFormArg::Sine,
-    }
-}
