@@ -278,7 +278,6 @@ impl Preset {
     fn generate_samples(&self, generator: &mut JingleGenerator) -> Vec<f32> {
         let (_, _, _, duration, frequency, _) = self.get_params();
         
-        // Convert values to None if they are the defaults (meaning user didn't specify them)
         let duration_opt = if duration != 1.0 { Some(duration) } else { None };
         let frequency_opt = if frequency != 440.0 { Some(frequency) } else { None };
         
